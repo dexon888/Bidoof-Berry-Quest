@@ -45,18 +45,18 @@ const Game = ({ onGameOver, onScoreUpdate }) => {
       this.background = this.add.tileSprite(400, 300, 800, 600, 'background');
 
       // Create invisible ground using graphics
-      const groundGraphics = this.add.graphics();
-      groundGraphics.fillStyle(0x000000, 0); // Set fill color to transparent
-      groundGraphics.fillRect(0, 568, 800, 32); // Create a rectangle
+      this.ground = this.add.graphics();
+      this.ground.fillStyle(0x000000, 0); // Set fill color to transparent
+      this.ground.fillRect(0, 568, 800, 32); // Create a rectangle
 
-      this.ground = this.physics.add.staticGroup();
-      this.ground.create(400, 584, 'ground').setScale(2).refreshBody();
+      const ground = this.physics.add.staticGroup();
+      ground.create(400, 584, this.ground.generateTexture('ground')).setScale(2).refreshBody();
 
       // Player (Bidoof)
       this.player = this.physics.add.sprite(100, 450, 'bidoof');
       this.player.setBounce(0.2);
       this.player.setCollideWorldBounds(true);
-      this.physics.add.collider(this.player, this.ground);
+      this.physics.add.collider(this.player, ground);
 
       // Log to verify Bidoof sprite creation
       console.log('Bidoof created:', this.player);
@@ -68,7 +68,7 @@ const Game = ({ onGameOver, onScoreUpdate }) => {
         setXY: { x: 800, y: 0, stepX: 70 }
       });
 
-      this.physics.add.collider(this.oranBerries, this.ground);
+      this.physics.add.collider(this.oranBerries, ground);
       this.physics.add.overlap(this.player, this.oranBerries, collectOranBerry, null, this);
 
       // Player controls
@@ -95,6 +95,11 @@ const Game = ({ onGameOver, onScoreUpdate }) => {
       this.player.setVelocityX(0);
 
       // Player controls
+      console.log('Left:', this.cursors.left.isDown);
+      console.log('Right:', this.cursors.right.isDown);
+      console.log('Up:', this.cursors.up.isDown);
+      console.log('Player Velocity:', this.player.body.velocity);
+
       if (this.cursors.left.isDown) {
         this.player.setVelocityX(-160);
       } else if (this.cursors.right.isDown) {
@@ -124,11 +129,22 @@ const Game = ({ onGameOver, onScoreUpdate }) => {
       oranBerry.setBounce(0.5);
     }
 
+    // Ensure the game canvas is focused
+    const handleFocus = () => {
+      game.canvas.tabIndex = 1;
+      game.canvas.focus();
+    };
+
+    // Add focus event listener
+    window.addEventListener('click', handleFocus);
+
     return () => {
       if (game) {
         game.destroy(true);
         game = null;
       }
+      // Remove focus event listener
+      window.removeEventListener('click', handleFocus);
     };
   }, [onGameOver, onScoreUpdate]);
 
