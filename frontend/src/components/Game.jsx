@@ -11,6 +11,8 @@ const gameContainerStyle = {
 
 const Game = ({ onGameOver, onScoreUpdate }) => {
   useEffect(() => {
+    let game;
+
     const config = {
       type: Phaser.AUTO,
       width: 800,
@@ -30,11 +32,11 @@ const Game = ({ onGameOver, onScoreUpdate }) => {
       }
     };
 
-    const game = new Phaser.Game(config);
+    game = new Phaser.Game(config);
 
     function preload() {
       this.load.image('background', 'assets/background.png'); // Ensure the path is correct
-      this.load.spritesheet('bidoof', 'assets/bidoof.png', { frameWidth: 32, frameHeight: 48 }); // Updated to spritesheet
+      this.load.image('bidoof', 'assets/bidoof.png'); // Updated to a single image
       this.load.image('oranBerry', 'assets/oranBerry.png'); // Ensure the path is correct
     }
 
@@ -42,9 +44,13 @@ const Game = ({ onGameOver, onScoreUpdate }) => {
       // Create a repeating background
       this.background = this.add.tileSprite(400, 300, 800, 600, 'background');
 
-      // Invisible ground for physics
+      // Create invisible ground using graphics
+      const groundGraphics = this.add.graphics();
+      groundGraphics.fillStyle(0x000000, 0); // Set fill color to transparent
+      groundGraphics.fillRect(0, 568, 800, 32); // Create a rectangle
+
       this.ground = this.physics.add.staticGroup();
-      this.ground.create(400, 568, 'ground').setScale(2).refreshBody().setVisible(false);
+      this.ground.create(400, 584, 'ground').setScale(2).refreshBody();
 
       // Player (Bidoof)
       this.player = this.physics.add.sprite(100, 450, 'bidoof');
@@ -79,46 +85,20 @@ const Game = ({ onGameOver, onScoreUpdate }) => {
       // Ensure camera is following the player
       this.cameras.main.startFollow(this.player);
       this.cameras.main.setZoom(1); // Adjust zoom level if needed
-
-      // Define animations
-      this.anims.create({
-        key: 'left',
-        frames: this.anims.generateFrameNumbers('bidoof', { start: 0, end: 3 }),
-        frameRate: 10,
-        repeat: -1
-      });
-
-      this.anims.create({
-        key: 'turn',
-        frames: [{ key: 'bidoof', frame: 4 }],
-        frameRate: 20
-      });
-
-      this.anims.create({
-        key: 'right',
-        frames: this.anims.generateFrameNumbers('bidoof', { start: 5, end: 8 }),
-        frameRate: 10,
-        repeat: -1
-      });
     }
 
     function update() {
       // Scroll background
       this.background.tilePositionX += 2;
 
-      // Automatic side-scrolling movement for Bidoof
-      this.player.setVelocityX(100);
+      // Reset player's horizontal velocity
+      this.player.setVelocityX(0);
 
       // Player controls
       if (this.cursors.left.isDown) {
         this.player.setVelocityX(-160);
-        this.player.anims.play('left', true);
       } else if (this.cursors.right.isDown) {
         this.player.setVelocityX(160);
-        this.player.anims.play('right', true);
-      } else {
-        this.player.setVelocityX(0);
-        this.player.anims.play('turn');
       }
 
       if (this.cursors.up.isDown && this.player.body.touching.down) {
@@ -145,7 +125,10 @@ const Game = ({ onGameOver, onScoreUpdate }) => {
     }
 
     return () => {
-      game.destroy(true);
+      if (game) {
+        game.destroy(true);
+        game = null;
+      }
     };
   }, [onGameOver, onScoreUpdate]);
 
